@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Menu, Mail, ShoppingCart, LogOut, Search, ChevronRight, ChevronUp, ChevronDown,
-  DollarSign, Building2, Smartphone,
+  DollarSign, Smartphone, Receipt, TrendingUp, RefreshCw,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -227,27 +227,45 @@ const Dashboard = () => {
           {transactions.length === 0 ? (
             <p className="p-4 text-sm text-muted-foreground">No transactions yet.</p>
           ) : (
-            <ul className="divide-y divide-border">
-              {transactions.map((t) => {
+            <ul>
+              {transactions.map((t, idx) => {
                 const acct = accounts.find((a) => a.id === t.account_id);
-                const positive = Number(t.amount) >= 0;
+                const isPending = t.status === "pending" && t.clears_at;
+                const dateLabel = new Date(t.transaction_date).toLocaleDateString(undefined, {
+                  month: "short", day: "numeric", year: "numeric",
+                });
+                const amt = Number(t.amount);
+                const amtAbs = Math.abs(amt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 return (
-                  <li key={t.id} className="flex items-center justify-between p-4">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{t.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(t.transaction_date).toLocaleDateString(undefined, { month: "short", day: "2-digit" })}
-                        {acct ? ` · ${acct.account_name} ${acctNumLabel(acct)}` : ""}
-                      </p>
-                      {t.status === "pending" && t.clears_at && (
-                        <p className="text-[11px] text-yellow-600 font-medium mt-0.5">
-                          Pending · Clears on {new Date(t.clears_at).toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" })}
+                  <li key={t.id} className={`px-4 py-4 ${idx < transactions.length - 1 ? "border-b border-border" : ""}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        {isPending ? (
+                          <p className="text-sm text-muted-foreground">Hold</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">{dateLabel}</p>
+                        )}
+                        <p className="font-bold text-foreground leading-snug">{t.description}</p>
+                        {acct && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {acct.account_name} {acctNumLabel(acct)}
+                          </p>
+                        )}
+                        {isPending && (
+                          <p className="text-sm text-muted-foreground mt-1 leading-snug">
+                            ${amtAbs} Total amount delayed, available{" "}
+                            {new Date(t.clears_at as string).toLocaleDateString(undefined, { month: "numeric", day: "numeric" })}{" "}
+                            at{" "}
+                            {new Date(t.clears_at as string).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true })}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-bold text-secondary">
+                          {amt < 0 ? "-" : ""}${amtAbs}
                         </p>
-                      )}
+                      </div>
                     </div>
-                    <span className={`text-sm font-medium ${positive ? "text-green-600" : "text-red-600"}`}>
-                      {positive ? "+" : ""}{fmt(Number(t.amount))}
-                    </span>
                   </li>
                 );
               })}
@@ -257,17 +275,27 @@ const Dashboard = () => {
       </div>
 
       <div className="bg-background border-t border-border">
-        <div className="max-w-5xl mx-auto flex items-center justify-around py-3 px-2 gap-1">
+        <div className="max-w-5xl mx-auto flex items-center justify-around py-3 px-1 gap-1">
           <button className="flex flex-col items-center text-secondary min-w-0 flex-1">
             <div className="w-8 h-8 rounded-full border-2 border-secondary flex items-center justify-center"><DollarSign className="w-4 h-4" /></div>
             <span className="text-[10px] sm:text-xs mt-1 font-medium truncate">Accounts</span>
           </button>
           <button onClick={() => navigate("/pay-transfer")} className="flex flex-col items-center text-muted-foreground hover:text-secondary min-w-0 flex-1">
-            <div className="w-8 h-8 flex items-center justify-center"><DollarSign className="w-5 h-5" /><ChevronRight className="w-3 h-3 -ml-1" /></div>
-            <span className="text-[10px] sm:text-xs mt-1 truncate">Pay &amp; Transfer</span>
+            <RefreshCw className="w-6 h-6" />
+            <span className="text-[10px] sm:text-xs mt-1 truncate">Transfer | Zelle®</span>
           </button>
-          <button className="flex flex-col items-center text-muted-foreground min-w-0 flex-1"><Smartphone className="w-6 h-6" /><span className="text-[10px] sm:text-xs mt-1 truncate">Deposit Checks</span></button>
-          <button className="flex flex-col items-center text-muted-foreground min-w-0 flex-1"><Building2 className="w-6 h-6" /><span className="text-[10px] sm:text-xs mt-1 truncate">Services</span></button>
+          <button className="flex flex-col items-center text-muted-foreground min-w-0 flex-1">
+            <Receipt className="w-6 h-6" />
+            <span className="text-[10px] sm:text-xs mt-1 truncate">Bill Pay</span>
+          </button>
+          <button className="flex flex-col items-center text-muted-foreground min-w-0 flex-1">
+            <Smartphone className="w-6 h-6" />
+            <span className="text-[10px] sm:text-xs mt-1 truncate">Deposit Checks</span>
+          </button>
+          <button className="flex flex-col items-center text-muted-foreground min-w-0 flex-1">
+            <TrendingUp className="w-6 h-6" />
+            <span className="text-[10px] sm:text-xs mt-1 truncate">Invest</span>
+          </button>
         </div>
       </div>
     </div>

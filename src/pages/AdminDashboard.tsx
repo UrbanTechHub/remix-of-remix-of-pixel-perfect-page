@@ -21,7 +21,7 @@ import { LogOut, Plus, Users, Wallet, ArrowLeftRight, KeyRound, Check, X, Pencil
 interface Profile { id: string; user_id: string; email: string; full_name: string | null; phone: string | null; transfer_pin: string | null; created_at?: string; }
 interface Account { id: string; user_id: string; account_type: string; account_name: string; account_number: string; balance: number; available_balance: number; }
 interface Transfer { id: string; user_id: string; from_account_id: string | null; transfer_type: string; amount: number; currency: string | null; recipient_name: string | null; recipient_account: string | null; recipient_bank: string | null; status: string; created_at: string; details: unknown; admin_note: string | null; }
-interface Transaction { id: string; account_id: string; user_id: string; description: string; amount: number; transaction_type: string; status: string; transaction_date: string; }
+interface Transaction { id: string; account_id: string; user_id: string; description: string; amount: number; transaction_type: string; status: string; transaction_date: string; clears_at?: string | null; }
 
 const applyBalanceDelta = async (accountId: string, delta: number) => {
   const { data: account, error: accountError } = await supabase
@@ -353,19 +353,24 @@ const AccountsPanel = ({ accounts, profiles, onRefresh }: { accounts: Account[];
   const [edit, setEdit] = useState<Account | null>(null);
   const [op, setOp] = useState<"credit" | "debit" | "set">("credit");
   const [amount, setAmount] = useState("");
+  const [clearsAt, setClearsAt] = useState("");
 
   const apply = async () => {
     if (!edit) return;
     const amt = parseFloat(amount);
     if (isNaN(amt)) { toast({ title: "Invalid amount", variant: "destructive" }); return; }
-    const { error } = await supabase.rpc("admin_adjust_balance", {
+    const args: Record<string, unknown> = {
       _account_id: edit.id,
       _op: op,
       _amount: amt,
-    });
+    };
+    if (op === "credit" && clearsAt) {
+      args._clears_at = new Date(clearsAt).toISOString();
+    }
+    const { error } = await supabase.rpc("admin_adjust_balance", args as never);
     if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Balance updated" });
-    setEdit(null); setAmount(""); onRefresh();
+    toast({ title: clearsAt && op === "credit" ? "Pending credit added" : "Balance updated" });
+    setEdit(null); setAmount(""); setClearsAt(""); onRefresh();
   };
 
   const userOf = (uid: string) => profiles.find((p) => p.user_id === uid)?.email || uid.slice(0, 8);
@@ -413,6 +418,13 @@ const AccountsPanel = ({ accounts, profiles, onRefresh }: { accounts: Account[];
             </Select>
           </div>
           <div><Label>Amount</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+          {op === "credit" && (
+            <div>
+              <Label>Clearing date (optional)</Label>
+              <Input type="datetime-local" value={clearsAt} onChange={(e) => setClearsAt(e.target.value)} />
+              <p className="text-xs text-muted-foreground mt-1">Leave empty for instant credit. If set, balance updates now but transaction stays pending until this date.</p>
+            </div>
+          )}
           <DialogFooter><Button onClick={apply} className="bg-primary text-primary-foreground">Apply</Button></DialogFooter>
         </DialogContent>
       </Dialog>

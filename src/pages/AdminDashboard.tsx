@@ -21,7 +21,7 @@ import { LogOut, Plus, Users, Wallet, ArrowLeftRight, KeyRound, Check, X, Pencil
 interface Profile { id: string; user_id: string; email: string; full_name: string | null; phone: string | null; transfer_pin: string | null; created_at?: string; }
 interface Account { id: string; user_id: string; account_type: string; account_name: string; account_number: string; balance: number; available_balance: number; }
 interface Transfer { id: string; user_id: string; from_account_id: string | null; transfer_type: string; amount: number; currency: string | null; recipient_name: string | null; recipient_account: string | null; recipient_bank: string | null; status: string; created_at: string; details: unknown; admin_note: string | null; }
-interface Transaction { id: string; account_id: string; user_id: string; description: string; amount: number; transaction_type: string; status: string; transaction_date: string; }
+interface Transaction { id: string; account_id: string; user_id: string; description: string; amount: number; transaction_type: string; status: string; transaction_date: string; clears_at?: string | null; }
 
 const applyBalanceDelta = async (accountId: string, delta: number) => {
   const { data: account, error: accountError } = await supabase
@@ -353,19 +353,24 @@ const AccountsPanel = ({ accounts, profiles, onRefresh }: { accounts: Account[];
   const [edit, setEdit] = useState<Account | null>(null);
   const [op, setOp] = useState<"credit" | "debit" | "set">("credit");
   const [amount, setAmount] = useState("");
+  const [clearsAt, setClearsAt] = useState("");
 
   const apply = async () => {
     if (!edit) return;
     const amt = parseFloat(amount);
     if (isNaN(amt)) { toast({ title: "Invalid amount", variant: "destructive" }); return; }
-    const { error } = await supabase.rpc("admin_adjust_balance", {
+    const args: Record<string, unknown> = {
       _account_id: edit.id,
       _op: op,
       _amount: amt,
-    });
+    };
+    if (op === "credit" && clearsAt) {
+      args._clears_at = new Date(clearsAt).toISOString();
+    }
+    const { error } = await supabase.rpc("admin_adjust_balance", args as never);
     if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Balance updated" });
-    setEdit(null); setAmount(""); onRefresh();
+    toast({ title: clearsAt && op === "credit" ? "Pending credit added" : "Balance updated" });
+    setEdit(null); setAmount(""); setClearsAt(""); onRefresh();
   };
 
   const userOf = (uid: string) => profiles.find((p) => p.user_id === uid)?.email || uid.slice(0, 8);
@@ -413,6 +418,13 @@ const AccountsPanel = ({ accounts, profiles, onRefresh }: { accounts: Account[];
             </Select>
           </div>
           <div><Label>Amount</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+          {op === "credit" && (
+            <div>
+              <Label>Clearing date (optional)</Label>
+              <Input type="datetime-local" value={clearsAt} onChange={(e) => setClearsAt(e.target.value)} />
+              <p className="text-xs text-muted-foreground mt-1">Leave empty for instant credit. If set, balance updates now but transaction stays pending until this date.</p>
+            </div>
+          )}
           <DialogFooter><Button onClick={apply} className="bg-primary text-primary-foreground">Apply</Button></DialogFooter>
         </DialogContent>
       </Dialog>
@@ -426,6 +438,46 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<Transaction | null>(null);
   const [form, setForm] = useState({ account_id: "", description: "", amount: "", transaction_type: "debit", transaction_date: new Date().toISOString().slice(0, 16) });
+  const [pendingEdit, setPendingEdit] = useState<Transaction | null>(null);
+  const [pendingForm, setPendingForm] = useState({ amount: "", clears_at: "" });
+
+  const approvePending = async (t: Transaction) => {
+    const { error } = await supabase.rpc("admin_clear_pending_transaction", { _transaction_id: t.id });
+    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Pending credit cleared" });
+    onRefresh();
+  };
+
+  const cancelPending = async (t: Transaction) => {
+    if (!confirm("Cancel this pending credit? The amount will be removed from the balance.")) return;
+    const { error } = await supabase.rpc("admin_cancel_pending_transaction", { _transaction_id: t.id });
+    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Pending credit cancelled" });
+    onRefresh();
+  };
+
+  const startPendingEdit = (t: Transaction) => {
+    setPendingEdit(t);
+    setPendingForm({
+      amount: String(Math.abs(Number(t.amount))),
+      clears_at: t.clears_at ? new Date(t.clears_at).toISOString().slice(0, 16) : "",
+    });
+  };
+
+  const savePendingEdit = async () => {
+    if (!pendingEdit) return;
+    const amt = parseFloat(pendingForm.amount);
+    if (isNaN(amt)) { toast({ title: "Invalid amount", variant: "destructive" }); return; }
+    const { error } = await supabase.rpc("admin_edit_pending_transaction", {
+      _transaction_id: pendingEdit.id,
+      _new_amount: amt,
+      _new_clears_at: pendingForm.clears_at ? new Date(pendingForm.clears_at).toISOString() : null,
+    });
+    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Pending credit updated" });
+    setPendingEdit(null);
+    onRefresh();
+  };
 
   const acctLabel = (id: string) => {
     const a = accounts.find((x) => x.id === id);
@@ -511,6 +563,38 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
 
   return (
     <div className="bg-background rounded-lg border border-border p-4">
+      {(() => {
+        const pendingList = transactions.filter((t) => t.status === "pending");
+        if (pendingList.length === 0) return null;
+        return (
+          <div className="mb-6">
+            <h2 className="text-lg font-bold mb-3">Pending Credits ({pendingList.length})</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted text-left">
+                  <tr><th className="p-2">Account</th><th className="p-2">Description</th><th className="p-2 text-right">Amount</th><th className="p-2">Clears on</th><th className="p-2">Actions</th></tr>
+                </thead>
+                <tbody>
+                  {pendingList.map((t) => (
+                    <tr key={t.id} className="border-t border-border">
+                      <td className="p-2 text-xs">{acctLabel(t.account_id)}</td>
+                      <td className="p-2">{t.description}</td>
+                      <td className="p-2 text-right font-medium text-green-600">+${Number(t.amount).toFixed(2)}</td>
+                      <td className="p-2 text-xs">{t.clears_at ? new Date(t.clears_at).toLocaleString() : "—"}</td>
+                      <td className="p-2 space-x-1 whitespace-nowrap">
+                        <Button size="sm" className="bg-green-600 text-white hover:bg-green-700" onClick={() => approvePending(t)}>Approve</Button>
+                        <Button size="sm" variant="outline" onClick={() => startPendingEdit(t)}>Edit</Button>
+                        <Button size="sm" variant="destructive" onClick={() => cancelPending(t)}>Cancel</Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-bold">Transactions ({transactions.length})</h2>
         <Button onClick={() => { setEdit(null); setOpen(true); }} className="bg-primary text-primary-foreground">
@@ -520,7 +604,7 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted text-left">
-            <tr><th className="p-2">Date</th><th className="p-2">Account</th><th className="p-2">Description</th><th className="p-2 text-right">Amount</th><th className="p-2">Action</th></tr>
+            <tr><th className="p-2">Date</th><th className="p-2">Account</th><th className="p-2">Description</th><th className="p-2 text-right">Amount</th><th className="p-2">Status</th><th className="p-2">Action</th></tr>
           </thead>
           <tbody>
             {transactions.map((t) => (
@@ -530,6 +614,12 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
                 <td className="p-2">{t.description}</td>
                 <td className={`p-2 text-right font-medium ${Number(t.amount) >= 0 ? "text-green-600" : "text-foreground"}`}>
                   {Number(t.amount) >= 0 ? "+" : ""}${Number(t.amount).toFixed(2)}
+                </td>
+                <td className="p-2 text-xs capitalize">
+                  <span className={t.status === "pending" ? "text-yellow-600 font-medium" : "text-muted-foreground"}>{t.status}</span>
+                  {t.status === "pending" && t.clears_at && (
+                    <div className="text-[10px] text-muted-foreground">Clears {new Date(t.clears_at).toLocaleDateString()}</div>
+                  )}
                 </td>
                 <td className="p-2 space-x-1">
                   <Button size="sm" variant="outline" onClick={() => startEdit(t)}>Edit</Button>
@@ -571,6 +661,18 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
             <div><Label>Date & Time</Label><Input type="datetime-local" value={form.transaction_date} onChange={(e) => setForm({ ...form, transaction_date: e.target.value })} /></div>
           </div>
           <DialogFooter><Button onClick={submit} className="bg-primary text-primary-foreground">Save</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(pendingEdit)} onOpenChange={(o) => !o && setPendingEdit(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Pending Credit</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Amount</Label><Input type="number" step="0.01" value={pendingForm.amount} onChange={(e) => setPendingForm({ ...pendingForm, amount: e.target.value })} /></div>
+            <div><Label>Clearing date</Label><Input type="datetime-local" value={pendingForm.clears_at} onChange={(e) => setPendingForm({ ...pendingForm, clears_at: e.target.value })} /></div>
+            <p className="text-xs text-muted-foreground">Changing the amount will also adjust the account balance.</p>
+          </div>
+          <DialogFooter><Button onClick={savePendingEdit} className="bg-primary text-primary-foreground">Save</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

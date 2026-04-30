@@ -358,25 +358,12 @@ const AccountsPanel = ({ accounts, profiles, onRefresh }: { accounts: Account[];
     if (!edit) return;
     const amt = parseFloat(amount);
     if (isNaN(amt)) { toast({ title: "Invalid amount", variant: "destructive" }); return; }
-    let newBal = Number(edit.balance);
-    if (op === "credit") newBal += amt;
-    else if (op === "debit") newBal -= amt;
-    else newBal = amt;
-    const { error } = await supabase.from("accounts")
-      .update({ balance: newBal, available_balance: newBal })
-      .eq("id", edit.id);
-    if (error) { toast({ title: "Failed", variant: "destructive" }); return; }
-
-    // Log transaction
-    if (op !== "set") {
-      await supabase.from("transactions").insert({
-        account_id: edit.id, user_id: edit.user_id,
-        description: op === "credit" ? "Credit Adjustment" : "Debit Adjustment",
-        amount: op === "credit" ? amt : -amt,
-        transaction_type: op === "credit" ? "credit" : "debit",
-        status: "completed",
-      });
-    }
+    const { error } = await supabase.rpc("admin_adjust_balance", {
+      _account_id: edit.id,
+      _op: op,
+      _amount: amt,
+    });
+    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Balance updated" });
     setEdit(null); setAmount(""); onRefresh();
   };

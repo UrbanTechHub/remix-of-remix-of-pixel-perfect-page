@@ -2,12 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Menu, Mail, ShoppingCart, LogOut, Search, ChevronRight, ChevronUp, ChevronDown,
-  DollarSign, Building2, Smartphone, Pencil,
+  DollarSign, Building2, Smartphone,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import boaLogo from "@/assets/boa-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,9 +26,6 @@ const Dashboard = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [profileForm, setProfileForm] = useState({ full_name: "", phone: "" });
 
   const load = async () => {
     await supabase.functions.invoke("ensure-user-records");
@@ -43,9 +38,7 @@ const Dashboard = () => {
 
     setAccounts(accts || []);
     setTransactions(txs || []);
-    const nextProfile = prof as Profile | null;
-    setProfile(nextProfile);
-    setProfileForm({ full_name: nextProfile?.full_name || "", phone: nextProfile?.phone || "" });
+    setProfile(prof as Profile | null);
   };
 
   useEffect(() => {
@@ -102,26 +95,6 @@ const Dashboard = () => {
   const handleProductsClick = () => toast({ title: "Products", description: "Your product overview is already shown below." });
   const profileName = profile?.full_name?.trim() || user?.user_metadata?.full_name || profile?.email?.split("@")[0] || user?.email?.split("@")[0] || "Customer";
 
-  const saveProfile = async () => {
-    if (!user) return;
-    setSavingProfile(true);
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ full_name: profileForm.full_name.trim() || null, phone: profileForm.phone.trim() || null })
-        .eq("user_id", user.id);
-      if (error) throw error;
-      toast({ title: "Profile updated" });
-      setProfileDialogOpen(false);
-      await load();
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Try again.";
-      toast({ title: "Update failed", description: message, variant: "destructive" });
-    } finally {
-      setSavingProfile(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-muted flex flex-col">
       <div className="bg-background border-b border-border">
@@ -168,38 +141,9 @@ const Dashboard = () => {
 
       <div className="flex-1 p-4 space-y-4 max-w-5xl w-full mx-auto">
         <div className="bg-background rounded-lg shadow-sm p-4">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
-              Welcome, {profileName}
-            </h2>
-            <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
-              <DialogTrigger asChild>
-                <button className="text-secondary hover:text-secondary/80 shrink-0" aria-label="Edit profile">
-                  <Pencil className="w-5 h-5" />
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader><DialogTitle>Edit Profile</DialogTitle></DialogHeader>
-                <div className="space-y-4 pt-2">
-                  <div>
-                    <Label>Full Name</Label>
-                    <Input value={profileForm.full_name} onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })} placeholder="Full name" />
-                  </div>
-                  <div>
-                    <Label>Email</Label>
-                    <Input value={profile?.email || user?.email || ""} disabled className="bg-muted" />
-                  </div>
-                  <div>
-                    <Label>Phone</Label>
-                    <Input value={profileForm.phone} onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })} placeholder="Phone number" />
-                  </div>
-                  <Button onClick={saveProfile} disabled={savingProfile} className="w-full bg-primary text-primary-foreground">
-                    {savingProfile ? "Saving..." : "Save Profile"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
+            Welcome, {profileName}
+          </h2>
           <div className="border-t border-border mt-3 pt-3">
             <div className="flex items-center justify-between">
               <p className="text-muted-foreground text-sm">

@@ -11,10 +11,13 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { saveTransferDraft, getUserEmail } from "@/lib/transferState";
 import { useToast } from "@/hooks/use-toast";
+import FromAccountSelect, { FromAccountInfo } from "@/components/transfer/FromAccountSelect";
 
 const InternationalTransfer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [fromAccountId, setFromAccountId] = useState("");
+  const [fromAccountInfo, setFromAccountInfo] = useState<FromAccountInfo | null>(null);
   const [f, setF] = useState({
     recipientName: "",
     recipientAddress: "",
@@ -40,6 +43,15 @@ const InternationalTransfer = () => {
         return;
       }
     }
+    if (!fromAccountId) {
+      toast({ title: "Select account", description: "Please choose an account to debit from.", variant: "destructive" });
+      return;
+    }
+    const amt = parseFloat(f.amount);
+    if (fromAccountInfo && amt > fromAccountInfo.balance) {
+      toast({ title: "Insufficient funds", description: "Selected account does not have enough balance.", variant: "destructive" });
+      return;
+    }
     saveTransferDraft({
       type: "international",
       fields: {
@@ -58,12 +70,15 @@ const InternationalTransfer = () => {
       amount: f.amount,
       currency: f.currency,
       email: getUserEmail(),
+      fromAccountId,
+      fromAccountLabel: fromAccountInfo?.label,
     });
     navigate("/transfer/pin");
   };
 
   return (
     <TransferLayout title="International Transfer">
+      <FromAccountSelect value={fromAccountId} onChange={(id, info) => { setFromAccountId(id); setFromAccountInfo(info); }} />
       <Field label="Recipient Full Name" v={f.recipientName} onChange={(v) => set("recipientName", v)} />
       <div>
         <Label>Recipient Address</Label>

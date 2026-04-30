@@ -10,6 +10,8 @@ export interface TransferDraft {
   amount: string;
   currency?: string;
   email: string; // recipient email for OTP confirmation (the user's own email)
+  fromAccountId?: string;
+  fromAccountLabel?: string;
 }
 
 const KEY = "pendingTransfer";

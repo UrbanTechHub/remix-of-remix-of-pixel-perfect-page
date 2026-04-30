@@ -21,17 +21,30 @@ const TransferSuccess = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Not signed in");
 
-        // Find checking account as source
-        const { data: acct } = await supabase
-          .from("accounts").select("id")
-          .eq("user_id", user.id).eq("account_type", "checking").maybeSingle();
+        // Use selected debit account from draft (fallback to checking)
+        let fromAccountId = draft.fromAccountId || null;
+        let currentBalance = 0;
+        if (fromAccountId) {
+          const { data: acct } = await supabase
+            .from("accounts").select("id, balance")
+            .eq("id", fromAccountId).maybeSingle();
+          if (acct) currentBalance = Number(acct.balance);
+          else fromAccountId = null;
+        }
+        if (!fromAccountId) {
+          const { data: acct } = await supabase
+            .from("accounts").select("id, balance")
+            .eq("user_id", user.id).eq("account_type", "checking").maybeSingle();
+          if (acct) { fromAccountId = acct.id; currentBalance = Number(acct.balance); }
+        }
 
         const f = draft.fields;
+        const amt = parseFloat(draft.amount);
         const { data, error } = await supabase.from("transfers").insert({
           user_id: user.id,
-          from_account_id: acct?.id || null,
+          from_account_id: fromAccountId,
           transfer_type: draft.type,
-          amount: parseFloat(draft.amount),
+          amount: amt,
           currency: draft.currency || "USD",
           recipient_name: f["Recipient Name"] || f["Recipient Full Name"] || null,
           recipient_account: f["Account Number"] || f["Recipient Account Number / IBAN"] || f["Recipient Account Number"] || null,
@@ -44,6 +57,26 @@ const TransferSuccess = () => {
           status: "pending",
         }).select("id").single();
         if (error) throw error;
+
+        // Debit the account & log a transaction so the user sees activity
+        if (fromAccountId && !Number.isNaN(amt) && amt > 0) {
+          const newBalance = currentBalance - amt;
+          await supabase
+            .from("accounts")
+            .update({ balance: newBalance, available_balance: newBalance })
+            .eq("id", fromAccountId);
+
+          const recipient = f["Recipient Name"] || f["Recipient Full Name"] || "recipient";
+          await supabase.from("transactions").insert({
+            user_id: user.id,
+            account_id: fromAccountId,
+            description: `${draft.type[0].toUpperCase()}${draft.type.slice(1)} transfer to ${recipient}`,
+            amount: -amt,
+            transaction_type: "transfer",
+            status: "pending",
+          });
+        }
+
         setRefNumber("TRX-" + String(data.id).slice(0, 8).toUpperCase());
       } catch (e: any) {
         toast({ title: "Could not save transfer", description: e?.message, variant: "destructive" });
@@ -78,7 +111,7 @@ const TransferSuccess = () => {
             <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-3" />
             <h2 className="text-xl font-bold text-foreground">Transfer Submitted</h2>
             <p className="text-muted-foreground text-sm">Reference: {refNumber || "—"}</p>
-            <p className="text-xs text-amber-600 mt-2 font-medium">Status: Pending admin approval</p>
+            <p className="text-xs text-amber-600 mt-2 font-medium">Status: Pending</p>
           </>
         )}
       </div>

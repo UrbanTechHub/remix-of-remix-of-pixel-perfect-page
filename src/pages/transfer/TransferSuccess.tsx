@@ -119,6 +119,7 @@ const TransferSuccess = () => {
       <div className="border-t border-border pt-4 space-y-2">
         <Row label="Type" value={`${draft.type[0].toUpperCase()}${draft.type.slice(1)} Transfer`} />
         <Row label="Amount" value={`${draft.currency || "USD"} ${draft.amount}`} />
+        {draft.fromAccountLabel && <Row label="From Account" value={draft.fromAccountLabel} />}
         {Object.entries(draft.fields).map(([k, v]) =>
           v ? <Row key={k} label={k} value={v} /> : null
         )}

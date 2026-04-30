@@ -499,7 +499,13 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
     if (!randomForm.account_id || isNaN(count) || count <= 0 || count > 200) {
       toast({ title: "Pick account and count (1-200)", variant: "destructive" }); return;
     }
-    if (isNaN(minA) || isNaN(maxA) || minA <= 0 || maxA <= minA) {
+    let targetNet: number | null = null;
+    if (randomForm.use_target) {
+      targetNet = parseFloat(randomForm.target_amount);
+      if (isNaN(targetNet) || targetNet <= 0) {
+        toast({ title: "Enter a positive target amount", variant: "destructive" }); return;
+      }
+    } else if (isNaN(minA) || isNaN(maxA) || minA <= 0 || maxA <= minA) {
       toast({ title: "Invalid amount range", variant: "destructive" }); return;
     }
     setRandomBusy(true);
@@ -509,6 +515,9 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
       _days_back: isNaN(days) ? 90 : days,
       _min_amount: minA,
       _max_amount: maxA,
+      _include_checks: randomForm.include_checks,
+      _target_net: targetNet,
+      _target_direction: randomForm.use_target ? randomForm.target_direction : null,
     } as never);
     setRandomBusy(false);
     if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }

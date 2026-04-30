@@ -13,7 +13,7 @@ const verifyWithToken = async (accessToken: string) => {
     body: JSON.stringify({}),
   });
 
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     return false;
   }
 
@@ -31,7 +31,7 @@ const verifyWithSession = async () => {
 
   if (error) {
     const message = error.message || "Could not verify admin access";
-    if (message.includes("401") || message.includes("403")) {
+    if (message.includes("401")) {
       return false;
     }
     throw error;

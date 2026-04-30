@@ -2,12 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Menu, Mail, ShoppingCart, LogOut, Search, ChevronRight, ChevronUp, ChevronDown,
-  DollarSign, Building2, Smartphone, Pencil,
+  DollarSign, Building2, Smartphone,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import boaLogo from "@/assets/boa-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,9 +26,6 @@ const Dashboard = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [profileForm, setProfileForm] = useState({ full_name: "", phone: "" });
 
   const load = async () => {
     await supabase.functions.invoke("ensure-user-records");
@@ -43,9 +38,7 @@ const Dashboard = () => {
 
     setAccounts(accts || []);
     setTransactions(txs || []);
-    const nextProfile = prof as Profile | null;
-    setProfile(nextProfile);
-    setProfileForm({ full_name: nextProfile?.full_name || "", phone: nextProfile?.phone || "" });
+    setProfile(prof as Profile | null);
   };
 
   useEffect(() => {
@@ -101,26 +94,6 @@ const Dashboard = () => {
   const handleInboxClick = () => toast({ title: "Inbox", description: "No new secure messages right now." });
   const handleProductsClick = () => toast({ title: "Products", description: "Your product overview is already shown below." });
   const profileName = profile?.full_name?.trim() || user?.user_metadata?.full_name || profile?.email?.split("@")[0] || user?.email?.split("@")[0] || "Customer";
-
-  const saveProfile = async () => {
-    if (!user) return;
-    setSavingProfile(true);
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ full_name: profileForm.full_name.trim() || null, phone: profileForm.phone.trim() || null })
-        .eq("user_id", user.id);
-      if (error) throw error;
-      toast({ title: "Profile updated" });
-      setProfileDialogOpen(false);
-      await load();
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Try again.";
-      toast({ title: "Update failed", description: message, variant: "destructive" });
-    } finally {
-      setSavingProfile(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-muted flex flex-col">

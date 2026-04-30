@@ -245,7 +245,9 @@ const Dashboard = () => {
                         ) : (
                           <p className="text-sm text-muted-foreground">{dateLabel}</p>
                         )}
-                        <p className="font-bold text-foreground leading-snug">{t.description}</p>
+                        <p className="font-bold text-foreground leading-snug">
+                          {isPending ? "Deposit Hold" : t.description}
+                        </p>
                         {acct && (
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {acct.account_name} {acctNumLabel(acct)}
@@ -254,9 +256,12 @@ const Dashboard = () => {
                         {isPending && (
                           <p className="text-sm text-muted-foreground mt-1 leading-snug">
                             ${amtAbs} Total amount delayed, available{" "}
-                            {new Date(t.clears_at as string).toLocaleDateString(undefined, { month: "numeric", day: "numeric" })}{" "}
+                            {new Date(t.clears_at as string).toLocaleDateString("en-US", { month: "numeric", day: "numeric", timeZone: "America/Chicago" })}{" "}
                             at{" "}
-                            {new Date(t.clears_at as string).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true })}
+                            {new Date(t.clears_at as string)
+                              .toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Chicago" })
+                              .toLowerCase()}{" "}
+                            CT
                           </p>
                         )}
                       </div>

@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 210 11% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 11% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 11% 15%;
+
+    --primary: 350 85% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 216 85% 22%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 20% 96%;
+    --muted-foreground: 210 11% 45%;
+
+    --accent: 216 85% 22%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 350 85% 42%;
+
+    --radius: 0.25rem;
+
+    /* Custom banking colors */
+    --bank-red: 350 85% 42%;
+    --bank-red-hover: 350 85% 35%;
+    --bank-blue: 216 85% 22%;
+    --bank-blue-light: 216 85% 45%;
+    --bank-gray: 210 11% 45%;
+    --bank-gray-light: 210 20% 96%;
+    --bank-gold: 43 74% 49%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 210 11% 15%;
+    --foreground: 0 0% 98%;
+    --card: 210 11% 18%;
+    --card-foreground: 0 0% 98%;
+    --popover: 210 11% 18%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 350 85% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 216 85% 35%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 11% 25%;
+    --muted-foreground: 210 11% 65%;
+    --accent: 216 85% 35%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 210 11% 25%;
+    --input: 210 11% 25%;
+    --ring: 350 85% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .text-bank-link {
+    @apply text-secondary hover:underline cursor-pointer;
+  }
+}

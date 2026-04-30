@@ -263,16 +263,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_add_check_deposit: {
-        Args: {
-          _account_id: string
-          _amount: number
-          _description: string
-          _running_balance: number
-          _transaction_date: string
-        }
-        Returns: string
-      }
+      admin_add_check_deposit:
+        | {
+            Args: {
+              _account_id: string
+              _amount: number
+              _description: string
+              _running_balance: number
+              _transaction_date: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _account_id: string
+              _amount: number
+              _clears_at?: string
+              _description: string
+              _running_balance: number
+              _transaction_date: string
+            }
+            Returns: string
+          }
       admin_adjust_balance:
         | {
             Args: { _account_id: string; _amount: number; _op: string }
@@ -302,6 +314,16 @@ export type Database = {
           _transaction_id: string
         }
         Returns: undefined
+      }
+      admin_generate_random_transactions: {
+        Args: {
+          _account_id: string
+          _count: number
+          _days_back?: number
+          _max_amount?: number
+          _min_amount?: number
+        }
+        Returns: number
       }
       has_role: {
         Args: {

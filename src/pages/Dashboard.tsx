@@ -89,7 +89,6 @@ const Dashboard = () => {
   const fmt = (n: number) => `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const banking = accounts.filter((a) => a.account_type === "checking" || a.account_type === "savings");
   const credit = accounts.filter((a) => a.account_type === "credit");
-  const txByAccount = (id: string) => transactions.filter((t) => t.account_id === id).slice(0, 3);
   const acctNumLabel = (a: Account) => a.account_number?.replace("xxxx", "");
   const handleInboxClick = () => toast({ title: "Inbox", description: "No new secure messages right now." });
   const handleProductsClick = () => toast({ title: "Products", description: "Your product overview is already shown below." });
@@ -178,18 +177,6 @@ const Dashboard = () => {
                       <ChevronRight className="w-5 h-5 text-muted-foreground" />
                     </div>
                   </div>
-                  {txByAccount(a.id).length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
-                      {txByAccount(a.id).map((t) => (
-                        <div key={t.id} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{new Date(t.transaction_date).toLocaleDateString(undefined, { month: "short", day: "2-digit" })} - {t.description}</span>
-                          <span className={Number(t.amount) >= 0 ? "text-green-600" : "text-foreground"}>
-                            {Number(t.amount) >= 0 ? "+" : ""}{fmt(Number(t.amount))}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

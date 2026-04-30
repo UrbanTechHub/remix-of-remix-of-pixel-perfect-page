@@ -265,6 +265,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      submit_user_transfer: {
+        Args: {
+          _amount: number
+          _bank_address: string
+          _currency: string
+          _details: Json
+          _from_account_id: string
+          _memo: string
+          _recipient_account: string
+          _recipient_bank: string
+          _recipient_name: string
+          _routing_number: string
+          _swift_code: string
+          _transfer_type: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "user"

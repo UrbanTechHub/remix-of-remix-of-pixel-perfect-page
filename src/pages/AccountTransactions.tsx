@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Mail, ShoppingCart, LogOut, ChevronDown, Info, DollarSign, Smartphone, Building2, ChevronRight } from "lucide-react";
+import { ChevronLeft, Mail, ShoppingCart, LogOut, ChevronDown, Info, DollarSign, Smartphone, Receipt, TrendingUp, RefreshCw } from "lucide-react";
 import boaLogo from "@/assets/boa-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -225,7 +225,7 @@ const AccountTransactions = () => {
 
       {/* Bottom nav */}
       <div className="bg-background border-t border-border">
-        <div className="max-w-5xl mx-auto flex items-center justify-around py-3 px-2 gap-1">
+        <div className="max-w-5xl mx-auto flex items-center justify-around py-3 px-1 gap-1">
           <button
             onClick={() => navigate("/dashboard")}
             className="flex flex-col items-center text-secondary min-w-0 flex-1"
@@ -239,19 +239,20 @@ const AccountTransactions = () => {
             onClick={() => navigate("/pay-transfer")}
             className="flex flex-col items-center text-muted-foreground hover:text-secondary min-w-0 flex-1"
           >
-            <div className="w-8 h-8 flex items-center justify-center">
-              <DollarSign className="w-5 h-5" />
-              <ChevronRight className="w-3 h-3 -ml-1" />
-            </div>
-            <span className="text-[10px] sm:text-xs mt-1 truncate">Pay &amp; Transfer</span>
+            <RefreshCw className="w-6 h-6" />
+            <span className="text-[10px] sm:text-xs mt-1 truncate">Transfer | Zelle®</span>
+          </button>
+          <button className="flex flex-col items-center text-muted-foreground min-w-0 flex-1">
+            <Receipt className="w-6 h-6" />
+            <span className="text-[10px] sm:text-xs mt-1 truncate">Bill Pay</span>
           </button>
           <button className="flex flex-col items-center text-muted-foreground min-w-0 flex-1">
             <Smartphone className="w-6 h-6" />
             <span className="text-[10px] sm:text-xs mt-1 truncate">Deposit Checks</span>
           </button>
           <button className="flex flex-col items-center text-muted-foreground min-w-0 flex-1">
-            <Building2 className="w-6 h-6" />
-            <span className="text-[10px] sm:text-xs mt-1 truncate">Services</span>
+            <TrendingUp className="w-6 h-6" />
+            <span className="text-[10px] sm:text-xs mt-1 truncate">Invest</span>
           </button>
         </div>
       </div>

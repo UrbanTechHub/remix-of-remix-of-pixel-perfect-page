@@ -320,8 +320,11 @@ export type Database = {
           _account_id: string
           _count: number
           _days_back?: number
+          _include_checks?: boolean
           _max_amount?: number
           _min_amount?: number
+          _target_direction?: string
+          _target_net?: number
         }
         Returns: number
       }

@@ -444,7 +444,7 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
   const [checkForm, setCheckForm] = useState({
     account_id: "",
     amount: "",
-    description: "BKOFAMERICA\nMOBILE\nXXXXX0000\nDEPOSIT *MOBILE IN",
+    description: "BKOFAMERICA\nMOBILE\nXXXXX0000\nDEPOSIT *MOBILE IN\nDES:PE10/30/22",
     transaction_date: new Date().toISOString().slice(0, 16),
     running_balance: "",
     clears_at: "",
@@ -483,7 +483,7 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
     setCheckForm({
       account_id: "",
       amount: "",
-      description: "BKOFAMERICA\nMOBILE\nXXXXX0000\nDEPOSIT *MOBILE IN",
+      description: "BKOFAMERICA\nMOBILE\nXXXXX0000\nDEPOSIT *MOBILE IN\nDES:PE10/30/22",
       transaction_date: new Date().toISOString().slice(0, 16),
       running_balance: "",
       clears_at: "",

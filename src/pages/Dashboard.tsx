@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Menu, Mail, ShoppingCart, LogOut, Search, ChevronRight, ChevronUp, ChevronDown,
-  DollarSign, Building2, Smartphone,
+  DollarSign, Smartphone, Receipt, TrendingUp, RefreshCw,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

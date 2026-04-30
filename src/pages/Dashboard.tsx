@@ -164,7 +164,11 @@ const Dashboard = () => {
             <div className="border-t border-border">
               {banking.length === 0 && <p className="p-4 text-sm text-muted-foreground">No accounts yet.</p>}
               {banking.map((a, i) => (
-                <div key={a.id} className={`p-4 ${i < banking.length - 1 ? "border-b border-border" : ""}`}>
+                <button
+                  key={a.id}
+                  onClick={() => navigate(`/account/${a.id}`)}
+                  className={`w-full text-left p-4 hover:bg-muted/50 transition-colors ${i < banking.length - 1 ? "border-b border-border" : ""}`}
+                >
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">BANK OF AMERICA</p>
@@ -177,7 +181,7 @@ const Dashboard = () => {
                       <ChevronRight className="w-5 h-5 text-muted-foreground" />
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -194,7 +198,7 @@ const Dashboard = () => {
             <div className="border-t border-border">
               {credit.length === 0 && <p className="p-4 text-sm text-muted-foreground">No credit cards.</p>}
               {credit.map((a) => (
-                <div key={a.id} className="p-4">
+                <button key={a.id} onClick={() => navigate(`/account/${a.id}`)} className="w-full text-left p-4 hover:bg-muted/50 transition-colors">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">BANK OF AMERICA</p>
@@ -207,7 +211,7 @@ const Dashboard = () => {
                       <ChevronRight className="w-5 h-5 text-muted-foreground" />
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}

@@ -17,6 +17,7 @@ import TransferPin from "./pages/transfer/TransferPin";
 import TransferSuccess from "./pages/transfer/TransferSuccess";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import AccountTransactions from "./pages/AccountTransactions";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/otp" element={<OTPPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/account/:accountId" element={<AccountTransactions />} />
             <Route path="/pay-transfer" element={<PayTransferHub />} />
             <Route path="/transfer/domestic" element={<DomesticTransfer />} />
             <Route path="/transfer/international" element={<InternationalTransfer />} />

@@ -22,6 +22,8 @@ interface Transaction {
   transaction_date: string;
   status?: string;
   clears_at?: string | null;
+  display_style?: string | null;
+  running_balance?: number | null;
 }
 
 const AccountTransactions = () => {
@@ -171,6 +173,7 @@ const AccountTransactions = () => {
               {rowsWithRunning.map((t, idx) => {
                 const positive = Number(t.amount) >= 0;
                 const isPending = t.status === "pending" && t.clears_at;
+                const isCheck = t.display_style === "check_deposit";
                 const dateLabel = new Date(t.transaction_date).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -182,13 +185,20 @@ const AccountTransactions = () => {
                     className={`px-4 py-4 ${idx < rowsWithRunning.length - 1 ? "border-b border-border" : ""}`}
                   >
                     <div className="flex items-start justify-between gap-3">
+                      {isCheck && (
+                        <div className="shrink-0 mt-1">
+                          <div className="w-12 h-9 border-2 border-foreground rounded-sm flex items-center justify-center">
+                            <div className="w-5 h-3 border border-foreground rounded-sm" />
+                          </div>
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         {isPending ? (
                           <p className="text-sm text-muted-foreground">Hold</p>
                         ) : (
                           <p className="text-sm text-muted-foreground">{dateLabel}</p>
                         )}
-                        <p className="font-bold text-foreground leading-snug">
+                        <p className="font-bold text-foreground leading-snug whitespace-pre-line">
                           {isPending ? "Deposit Hold" : t.description}
                         </p>
                         {isPending && (
@@ -219,7 +229,11 @@ const AccountTransactions = () => {
                             maximumFractionDigits: 2,
                           })}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">{fmt(t.runningAfter)}</p>
+                        {t.running_balance != null ? (
+                          <p className="text-xs text-muted-foreground mt-1">{fmt(Number(t.running_balance))}</p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground mt-1">{fmt(t.runningAfter)}</p>
+                        )}
                       </div>
                     </div>
                   </li>

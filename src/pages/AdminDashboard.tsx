@@ -447,7 +447,17 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
     description: "BKOFAMERICA\nMOBILE\nXXXXX0000\nDEPOSIT *MOBILE IN",
     transaction_date: new Date().toISOString().slice(0, 16),
     running_balance: "",
+    clears_at: "",
   });
+  const [randomOpen, setRandomOpen] = useState(false);
+  const [randomForm, setRandomForm] = useState({
+    account_id: "",
+    count: "20",
+    days_back: "90",
+    min_amount: "5",
+    max_amount: "500",
+  });
+  const [randomBusy, setRandomBusy] = useState(false);
 
   const submitCheckDeposit = async () => {
     const amt = parseFloat(checkForm.amount);
@@ -461,9 +471,10 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
       _description: checkForm.description,
       _transaction_date: new Date(checkForm.transaction_date).toISOString(),
       _running_balance: isNaN(rb) ? null : rb,
+      _clears_at: checkForm.clears_at ? new Date(checkForm.clears_at).toISOString() : null,
     } as never);
     if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Check deposit added" });
+    toast({ title: checkForm.clears_at ? "Pending check deposit added" : "Check deposit added" });
     setCheckOpen(false);
     setCheckForm({
       account_id: "",
@@ -471,7 +482,34 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
       description: "BKOFAMERICA\nMOBILE\nXXXXX0000\nDEPOSIT *MOBILE IN",
       transaction_date: new Date().toISOString().slice(0, 16),
       running_balance: "",
+      clears_at: "",
     });
+    onRefresh();
+  };
+
+  const submitRandom = async () => {
+    const count = parseInt(randomForm.count, 10);
+    const days = parseInt(randomForm.days_back, 10);
+    const minA = parseFloat(randomForm.min_amount);
+    const maxA = parseFloat(randomForm.max_amount);
+    if (!randomForm.account_id || isNaN(count) || count <= 0 || count > 200) {
+      toast({ title: "Pick account and count (1-200)", variant: "destructive" }); return;
+    }
+    if (isNaN(minA) || isNaN(maxA) || minA <= 0 || maxA <= minA) {
+      toast({ title: "Invalid amount range", variant: "destructive" }); return;
+    }
+    setRandomBusy(true);
+    const { data, error } = await supabase.rpc("admin_generate_random_transactions", {
+      _account_id: randomForm.account_id,
+      _count: count,
+      _days_back: isNaN(days) ? 90 : days,
+      _min_amount: minA,
+      _max_amount: maxA,
+    } as never);
+    setRandomBusy(false);
+    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: `Generated ${data ?? count} transactions` });
+    setRandomOpen(false);
     onRefresh();
   };
 
@@ -632,6 +670,9 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-bold">Transactions ({transactions.length})</h2>
         <div className="flex gap-2 flex-wrap">
+          <Button onClick={() => setRandomOpen(true)} variant="outline">
+            <Plus className="w-4 h-4 mr-2" />Random History
+          </Button>
           <Button onClick={() => setCheckOpen(true)} variant="outline">
             <Plus className="w-4 h-4 mr-2" />Check Deposit
           </Button>

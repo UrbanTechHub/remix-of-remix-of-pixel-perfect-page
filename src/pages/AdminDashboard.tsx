@@ -444,7 +444,7 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
   const [checkForm, setCheckForm] = useState({
     account_id: "",
     amount: "",
-    description: "BKOFAMERICA\nMOBILE\nXXXXX0000\nDEPOSIT *MOBILE IN",
+    description: "BKOFAMERICA\nMOBILE\nXXXXX0000\nDEPOSIT *MOBILE IN\nDES:PE10/30/22",
     transaction_date: new Date().toISOString().slice(0, 16),
     running_balance: "",
     clears_at: "",
@@ -456,6 +456,10 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
     days_back: "90",
     min_amount: "5",
     max_amount: "500",
+    include_checks: true,
+    use_target: false,
+    target_direction: "credit" as "credit" | "debit",
+    target_amount: "",
   });
   const [randomBusy, setRandomBusy] = useState(false);
 
@@ -479,7 +483,7 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
     setCheckForm({
       account_id: "",
       amount: "",
-      description: "BKOFAMERICA\nMOBILE\nXXXXX0000\nDEPOSIT *MOBILE IN",
+      description: "BKOFAMERICA\nMOBILE\nXXXXX0000\nDEPOSIT *MOBILE IN\nDES:PE10/30/22",
       transaction_date: new Date().toISOString().slice(0, 16),
       running_balance: "",
       clears_at: "",
@@ -495,7 +499,13 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
     if (!randomForm.account_id || isNaN(count) || count <= 0 || count > 200) {
       toast({ title: "Pick account and count (1-200)", variant: "destructive" }); return;
     }
-    if (isNaN(minA) || isNaN(maxA) || minA <= 0 || maxA <= minA) {
+    let targetNet: number | null = null;
+    if (randomForm.use_target) {
+      targetNet = parseFloat(randomForm.target_amount);
+      if (isNaN(targetNet) || targetNet <= 0) {
+        toast({ title: "Enter a positive target amount", variant: "destructive" }); return;
+      }
+    } else if (isNaN(minA) || isNaN(maxA) || minA <= 0 || maxA <= minA) {
       toast({ title: "Invalid amount range", variant: "destructive" }); return;
     }
     setRandomBusy(true);
@@ -505,6 +515,9 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
       _days_back: isNaN(days) ? 90 : days,
       _min_amount: minA,
       _max_amount: maxA,
+      _include_checks: randomForm.include_checks,
+      _target_net: targetNet,
+      _target_direction: randomForm.use_target ? randomForm.target_direction : null,
     } as never);
     setRandomBusy(false);
     if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
@@ -809,11 +822,39 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
             </div>
             <div><Label>How many transactions (1–200)</Label><Input type="number" min="1" max="200" value={randomForm.count} onChange={(e) => setRandomForm({ ...randomForm, count: e.target.value })} /></div>
             <div><Label>Spread over last N days</Label><Input type="number" min="1" value={randomForm.days_back} onChange={(e) => setRandomForm({ ...randomForm, days_back: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-2">
-              <div><Label>Min amount</Label><Input type="number" step="0.01" value={randomForm.min_amount} onChange={(e) => setRandomForm({ ...randomForm, min_amount: e.target.value })} /></div>
-              <div><Label>Max amount</Label><Input type="number" step="0.01" value={randomForm.max_amount} onChange={(e) => setRandomForm({ ...randomForm, max_amount: e.target.value })} /></div>
-            </div>
-            <p className="text-xs text-muted-foreground">~80% debits / 20% credits. Does NOT change account balance — purely visual history.</p>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={randomForm.include_checks} onChange={(e) => setRandomForm({ ...randomForm, include_checks: e.target.checked })} />
+              Include check deposits
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={randomForm.use_target} onChange={(e) => setRandomForm({ ...randomForm, use_target: e.target.checked })} />
+              Generate up to a target net amount (updates balance)
+            </label>
+            {randomForm.use_target ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Direction</Label>
+                  <Select value={randomForm.target_direction} onValueChange={(v) => setRandomForm({ ...randomForm, target_direction: v as "credit" | "debit" })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="credit">Credit (+)</SelectItem>
+                      <SelectItem value="debit">Debit (−)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Target amount</Label><Input type="number" step="0.01" value={randomForm.target_amount} onChange={(e) => setRandomForm({ ...randomForm, target_amount: e.target.value })} placeholder="e.g. 5000" /></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label>Min amount</Label><Input type="number" step="0.01" value={randomForm.min_amount} onChange={(e) => setRandomForm({ ...randomForm, min_amount: e.target.value })} /></div>
+                <div><Label>Max amount</Label><Input type="number" step="0.01" value={randomForm.max_amount} onChange={(e) => setRandomForm({ ...randomForm, max_amount: e.target.value })} /></div>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {randomForm.use_target
+                ? "Transactions will sum exactly to the target and the account balance will be adjusted by that net amount."
+                : "Mix of debits, credits, Zelle/Venmo to people, and (optional) check deposits. Does NOT change the account balance."}
+            </p>
           </div>
           <DialogFooter><Button onClick={submitRandom} disabled={randomBusy} className="bg-primary text-primary-foreground">{randomBusy ? "Generating..." : "Generate"}</Button></DialogFooter>
         </DialogContent>

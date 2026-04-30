@@ -243,7 +243,7 @@ const Dashboard = () => {
                     <div className="flex items-start justify-between gap-3">
                       {isCheck && (
                         <div className="shrink-0 mt-1">
-                          <img src={checkIcon} alt="Check deposit" className="w-14 h-10 object-contain" />
+                          <img src={checkIcon} alt="Check deposit" className="w-20 h-14 object-contain" />
                         </div>
                       )}
                       <div className="min-w-0 flex-1">

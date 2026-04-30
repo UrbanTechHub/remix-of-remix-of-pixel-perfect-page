@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ isAdmin: Boolean(roleRow), userId: user.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: Boolean(roleRow) ? 200 : 403,
+      status: 200,
     });
   } catch (error: any) {
     console.error("verify-admin error:", error);

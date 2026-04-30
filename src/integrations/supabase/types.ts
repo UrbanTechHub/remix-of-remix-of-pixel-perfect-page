@@ -120,7 +120,9 @@ export type Database = {
           clears_at: string | null
           created_at: string
           description: string
+          display_style: string | null
           id: string
+          running_balance: number | null
           status: string
           transaction_date: string
           transaction_type: string
@@ -132,7 +134,9 @@ export type Database = {
           clears_at?: string | null
           created_at?: string
           description: string
+          display_style?: string | null
           id?: string
+          running_balance?: number | null
           status?: string
           transaction_date?: string
           transaction_type: string
@@ -144,7 +148,9 @@ export type Database = {
           clears_at?: string | null
           created_at?: string
           description?: string
+          display_style?: string | null
           id?: string
+          running_balance?: number | null
           status?: string
           transaction_date?: string
           transaction_type?: string
@@ -257,6 +263,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_add_check_deposit: {
+        Args: {
+          _account_id: string
+          _amount: number
+          _description: string
+          _running_balance: number
+          _transaction_date: string
+        }
+        Returns: string
+      }
       admin_adjust_balance:
         | {
             Args: { _account_id: string; _amount: number; _op: string }

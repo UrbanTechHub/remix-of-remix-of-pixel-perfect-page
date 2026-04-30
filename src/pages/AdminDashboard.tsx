@@ -21,7 +21,7 @@ import { LogOut, Plus, Users, Wallet, ArrowLeftRight, KeyRound, Check, X, Pencil
 interface Profile { id: string; user_id: string; email: string; full_name: string | null; phone: string | null; transfer_pin: string | null; created_at?: string; }
 interface Account { id: string; user_id: string; account_type: string; account_name: string; account_number: string; balance: number; available_balance: number; }
 interface Transfer { id: string; user_id: string; from_account_id: string | null; transfer_type: string; amount: number; currency: string | null; recipient_name: string | null; recipient_account: string | null; recipient_bank: string | null; status: string; created_at: string; details: unknown; admin_note: string | null; }
-interface Transaction { id: string; account_id: string; user_id: string; description: string; amount: number; transaction_type: string; status: string; transaction_date: string; clears_at?: string | null; }
+interface Transaction { id: string; account_id: string; user_id: string; description: string; amount: number; transaction_type: string; status: string; transaction_date: string; clears_at?: string | null; display_style?: string | null; running_balance?: number | null; }
 
 const applyBalanceDelta = async (accountId: string, delta: number) => {
   const { data: account, error: accountError } = await supabase
@@ -440,6 +440,40 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
   const [form, setForm] = useState({ account_id: "", description: "", amount: "", transaction_type: "debit", transaction_date: new Date().toISOString().slice(0, 16) });
   const [pendingEdit, setPendingEdit] = useState<Transaction | null>(null);
   const [pendingForm, setPendingForm] = useState({ amount: "", clears_at: "" });
+  const [checkOpen, setCheckOpen] = useState(false);
+  const [checkForm, setCheckForm] = useState({
+    account_id: "",
+    amount: "",
+    description: "BKOFAMERICA\nMOBILE\nXXXXX0000\nDEPOSIT *MOBILE IN",
+    transaction_date: new Date().toISOString().slice(0, 16),
+    running_balance: "",
+  });
+
+  const submitCheckDeposit = async () => {
+    const amt = parseFloat(checkForm.amount);
+    const rb = parseFloat(checkForm.running_balance);
+    if (!checkForm.account_id || isNaN(amt) || amt <= 0 || !checkForm.description) {
+      toast({ title: "Fill account, amount and description", variant: "destructive" }); return;
+    }
+    const { error } = await supabase.rpc("admin_add_check_deposit", {
+      _account_id: checkForm.account_id,
+      _amount: amt,
+      _description: checkForm.description,
+      _transaction_date: new Date(checkForm.transaction_date).toISOString(),
+      _running_balance: isNaN(rb) ? null : rb,
+    } as never);
+    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Check deposit added" });
+    setCheckOpen(false);
+    setCheckForm({
+      account_id: "",
+      amount: "",
+      description: "BKOFAMERICA\nMOBILE\nXXXXX0000\nDEPOSIT *MOBILE IN",
+      transaction_date: new Date().toISOString().slice(0, 16),
+      running_balance: "",
+    });
+    onRefresh();
+  };
 
   const approvePending = async (t: Transaction) => {
     const { error } = await supabase.rpc("admin_clear_pending_transaction", { _transaction_id: t.id });
@@ -597,9 +631,14 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
 
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-bold">Transactions ({transactions.length})</h2>
-        <Button onClick={() => { setEdit(null); setOpen(true); }} className="bg-primary text-primary-foreground">
-          <Plus className="w-4 h-4 mr-2" />New Transaction
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={() => setCheckOpen(true)} variant="outline">
+            <Plus className="w-4 h-4 mr-2" />Check Deposit
+          </Button>
+          <Button onClick={() => { setEdit(null); setOpen(true); }} className="bg-primary text-primary-foreground">
+            <Plus className="w-4 h-4 mr-2" />New Transaction
+          </Button>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -673,6 +712,37 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
             <p className="text-xs text-muted-foreground">Changing the amount will also adjust the account balance.</p>
           </div>
           <DialogFooter><Button onClick={savePendingEdit} className="bg-primary text-primary-foreground">Save</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={checkOpen} onOpenChange={setCheckOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Check Deposit Credit</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Account</Label>
+              <Select value={checkForm.account_id} onValueChange={(v) => setCheckForm({ ...checkForm, account_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
+                <SelectContent>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>{acctLabel(a.id)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Amount</Label><Input type="number" step="0.01" value={checkForm.amount} onChange={(e) => setCheckForm({ ...checkForm, amount: e.target.value })} /></div>
+            <div>
+              <Label>Description (multi-line, e.g. BKOFAMERICA / MOBILE 11/17 / XXXXX54210 / DEPOSIT *MOBILE IN)</Label>
+              <Textarea rows={4} value={checkForm.description} onChange={(e) => setCheckForm({ ...checkForm, description: e.target.value })} />
+            </div>
+            <div><Label>Date & Time</Label><Input type="datetime-local" value={checkForm.transaction_date} onChange={(e) => setCheckForm({ ...checkForm, transaction_date: e.target.value })} /></div>
+            <div>
+              <Label>Balance after this transaction (shown under amount)</Label>
+              <Input type="number" step="0.01" value={checkForm.running_balance} onChange={(e) => setCheckForm({ ...checkForm, running_balance: e.target.value })} placeholder="e.g. 8790.58" />
+              <p className="text-xs text-muted-foreground mt-1">Leave empty to hide the running balance under the amount.</p>
+            </div>
+          </div>
+          <DialogFooter><Button onClick={submitCheckDeposit} className="bg-primary text-primary-foreground">Add Deposit</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

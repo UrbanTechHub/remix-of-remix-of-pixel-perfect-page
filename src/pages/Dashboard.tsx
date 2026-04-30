@@ -236,7 +236,7 @@ const Dashboard = () => {
                         {acct ? ` · ${acct.account_name} ${acctNumLabel(acct)}` : ""}
                       </p>
                     </div>
-                    <span className={`text-sm font-medium ${positive ? "text-green-600" : "text-foreground"}`}>
+                    <span className={`text-sm font-medium ${positive ? "text-green-600" : "text-red-600"}`}>
                       {positive ? "+" : ""}{fmt(Number(t.amount))}
                     </span>
                   </li>

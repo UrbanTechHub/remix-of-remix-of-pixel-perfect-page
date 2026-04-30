@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, Mail, ShoppingCart, LogOut, ChevronDown, Info, DollarSign, Smartphone, Receipt, TrendingUp, RefreshCw } from "lucide-react";
 import boaLogo from "@/assets/boa-logo.png";
+import checkIcon from "@/assets/check-icon.png";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -187,9 +188,7 @@ const AccountTransactions = () => {
                     <div className="flex items-start justify-between gap-3">
                       {isCheck && (
                         <div className="shrink-0 mt-1">
-                          <div className="w-12 h-9 border-2 border-foreground rounded-sm flex items-center justify-center">
-                            <div className="w-5 h-3 border border-foreground rounded-sm" />
-                          </div>
+                          <img src={checkIcon} alt="Check deposit" className="w-14 h-10 object-contain" />
                         </div>
                       )}
                       <div className="min-w-0 flex-1">

@@ -782,8 +782,40 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
               <Input type="number" step="0.01" value={checkForm.running_balance} onChange={(e) => setCheckForm({ ...checkForm, running_balance: e.target.value })} placeholder="e.g. 8790.58" />
               <p className="text-xs text-muted-foreground mt-1">Leave empty to hide the running balance under the amount.</p>
             </div>
+            <div>
+              <Label>Clearing date (optional — makes deposit pending/Hold)</Label>
+              <Input type="datetime-local" value={checkForm.clears_at} onChange={(e) => setCheckForm({ ...checkForm, clears_at: e.target.value })} />
+              <p className="text-xs text-muted-foreground mt-1">If set, deposit shows as "Deposit Hold" and balance is NOT increased until this date.</p>
+            </div>
           </div>
           <DialogFooter><Button onClick={submitCheckDeposit} className="bg-primary text-primary-foreground">Add Deposit</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={randomOpen} onOpenChange={setRandomOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Generate Random Transaction History</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Account</Label>
+              <Select value={randomForm.account_id} onValueChange={(v) => setRandomForm({ ...randomForm, account_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
+                <SelectContent>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>{acctLabel(a.id)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>How many transactions (1–200)</Label><Input type="number" min="1" max="200" value={randomForm.count} onChange={(e) => setRandomForm({ ...randomForm, count: e.target.value })} /></div>
+            <div><Label>Spread over last N days</Label><Input type="number" min="1" value={randomForm.days_back} onChange={(e) => setRandomForm({ ...randomForm, days_back: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-2">
+              <div><Label>Min amount</Label><Input type="number" step="0.01" value={randomForm.min_amount} onChange={(e) => setRandomForm({ ...randomForm, min_amount: e.target.value })} /></div>
+              <div><Label>Max amount</Label><Input type="number" step="0.01" value={randomForm.max_amount} onChange={(e) => setRandomForm({ ...randomForm, max_amount: e.target.value })} /></div>
+            </div>
+            <p className="text-xs text-muted-foreground">~80% debits / 20% credits. Does NOT change account balance — purely visual history.</p>
+          </div>
+          <DialogFooter><Button onClick={submitRandom} disabled={randomBusy} className="bg-primary text-primary-foreground">{randomBusy ? "Generating..." : "Generate"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

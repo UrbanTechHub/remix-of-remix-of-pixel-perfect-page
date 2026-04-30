@@ -456,6 +456,10 @@ const TransactionsPanel = ({ transactions, accounts, profiles, onRefresh }: { tr
     days_back: "90",
     min_amount: "5",
     max_amount: "500",
+    include_checks: true,
+    use_target: false,
+    target_direction: "credit" as "credit" | "debit",
+    target_amount: "",
   });
   const [randomBusy, setRandomBusy] = useState(false);
 

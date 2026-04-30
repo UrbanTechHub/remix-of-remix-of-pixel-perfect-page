@@ -11,11 +11,14 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { saveTransferDraft, getUserEmail } from "@/lib/transferState";
 import { useToast } from "@/hooks/use-toast";
+import FromAccountSelect, { FromAccountInfo } from "@/components/transfer/FromAccountSelect";
 
 const WireTransfer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [scope, setScope] = useState<"domestic" | "international">("domestic");
+  const [fromAccountId, setFromAccountId] = useState("");
+  const [fromAccountInfo, setFromAccountInfo] = useState<FromAccountInfo | null>(null);
   const [f, setF] = useState({
     senderName: "",
     senderAccount: "",
@@ -40,6 +43,15 @@ const WireTransfer = () => {
         return;
       }
     }
+    if (!fromAccountId) {
+      toast({ title: "Select account", description: "Please choose an account to debit from.", variant: "destructive" });
+      return;
+    }
+    const amt = parseFloat(f.amount);
+    if (fromAccountInfo && amt > fromAccountInfo.balance) {
+      toast({ title: "Insufficient funds", description: "Selected account does not have enough balance.", variant: "destructive" });
+      return;
+    }
     saveTransferDraft({
       type: "wire",
       fields: {
@@ -58,12 +70,15 @@ const WireTransfer = () => {
       amount: f.amount,
       currency: f.currency,
       email: getUserEmail(),
+      fromAccountId,
+      fromAccountLabel: fromAccountInfo?.label,
     });
     navigate("/transfer/pin");
   };
 
   return (
     <TransferLayout title="Wire Transfer">
+      <FromAccountSelect value={fromAccountId} onChange={(id, info) => { setFromAccountId(id); setFromAccountInfo(info); }} />
       <div>
         <Label>Wire Type</Label>
         <RadioGroup value={scope} onValueChange={(v) => setScope(v as any)} className="mt-2 flex gap-4">

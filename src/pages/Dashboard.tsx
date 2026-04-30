@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface Account { id: string; account_type: string; account_name: string; account_number: string; balance: number; }
-interface Transaction { id: string; account_id: string; description: string; amount: number; transaction_date: string; status?: string; clears_at?: string | null; }
+interface Transaction { id: string; account_id: string; description: string; amount: number; transaction_date: string; status?: string; clears_at?: string | null; display_style?: string | null; running_balance?: number | null; }
 interface Profile { full_name: string | null; email: string; phone: string | null; }
 
 const Dashboard = () => {
@@ -231,6 +231,7 @@ const Dashboard = () => {
               {transactions.map((t, idx) => {
                 const acct = accounts.find((a) => a.id === t.account_id);
                 const isPending = t.status === "pending" && t.clears_at;
+                const isCheck = t.display_style === "check_deposit";
                 const dateLabel = new Date(t.transaction_date).toLocaleDateString(undefined, {
                   month: "short", day: "numeric", year: "numeric",
                 });
@@ -239,13 +240,20 @@ const Dashboard = () => {
                 return (
                   <li key={t.id} className={`px-4 py-4 ${idx < transactions.length - 1 ? "border-b border-border" : ""}`}>
                     <div className="flex items-start justify-between gap-3">
+                      {isCheck && (
+                        <div className="shrink-0 mt-1">
+                          <div className="w-12 h-9 border-2 border-foreground rounded-sm flex items-center justify-center">
+                            <div className="w-5 h-3 border border-foreground rounded-sm" />
+                          </div>
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         {isPending ? (
                           <p className="text-sm text-muted-foreground">Hold</p>
                         ) : (
                           <p className="text-sm text-muted-foreground">{dateLabel}</p>
                         )}
-                        <p className="font-bold text-foreground leading-snug">
+                        <p className="font-bold text-foreground leading-snug whitespace-pre-line">
                           {isPending ? "Deposit Hold" : t.description}
                         </p>
                         {acct && (
@@ -269,6 +277,9 @@ const Dashboard = () => {
                         <p className="font-bold text-secondary">
                           {amt < 0 ? "-" : ""}${amtAbs}
                         </p>
+                        {t.running_balance != null && (
+                          <p className="text-xs text-muted-foreground mt-1">${Number(t.running_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        )}
                       </div>
                     </div>
                   </li>

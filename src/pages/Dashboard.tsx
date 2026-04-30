@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface Account { id: string; account_type: string; account_name: string; account_number: string; balance: number; }
-interface Transaction { id: string; account_id: string; description: string; amount: number; transaction_date: string; }
+interface Transaction { id: string; account_id: string; description: string; amount: number; transaction_date: string; status?: string; clears_at?: string | null; }
 interface Profile { full_name: string | null; email: string; phone: string | null; }
 
 const Dashboard = () => {
@@ -235,6 +235,11 @@ const Dashboard = () => {
                         {new Date(t.transaction_date).toLocaleDateString(undefined, { month: "short", day: "2-digit" })}
                         {acct ? ` · ${acct.account_name} ${acctNumLabel(acct)}` : ""}
                       </p>
+                      {t.status === "pending" && t.clears_at && (
+                        <p className="text-[11px] text-yellow-600 font-medium mt-0.5">
+                          Pending · Clears on {new Date(t.clears_at).toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" })}
+                        </p>
+                      )}
                     </div>
                     <span className={`text-sm font-medium ${positive ? "text-green-600" : "text-red-600"}`}>
                       {positive ? "+" : ""}{fmt(Number(t.amount))}

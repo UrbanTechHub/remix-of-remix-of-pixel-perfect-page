@@ -141,38 +141,9 @@ const Dashboard = () => {
 
       <div className="flex-1 p-4 space-y-4 max-w-5xl w-full mx-auto">
         <div className="bg-background rounded-lg shadow-sm p-4">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
-              Welcome, {profileName}
-            </h2>
-            <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
-              <DialogTrigger asChild>
-                <button className="text-secondary hover:text-secondary/80 shrink-0" aria-label="Edit profile">
-                  <Pencil className="w-5 h-5" />
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader><DialogTitle>Edit Profile</DialogTitle></DialogHeader>
-                <div className="space-y-4 pt-2">
-                  <div>
-                    <Label>Full Name</Label>
-                    <Input value={profileForm.full_name} onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })} placeholder="Full name" />
-                  </div>
-                  <div>
-                    <Label>Email</Label>
-                    <Input value={profile?.email || user?.email || ""} disabled className="bg-muted" />
-                  </div>
-                  <div>
-                    <Label>Phone</Label>
-                    <Input value={profileForm.phone} onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })} placeholder="Phone number" />
-                  </div>
-                  <Button onClick={saveProfile} disabled={savingProfile} className="w-full bg-primary text-primary-foreground">
-                    {savingProfile ? "Saving..." : "Save Profile"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
+            Welcome, {profileName}
+          </h2>
           <div className="border-t border-border mt-3 pt-3">
             <div className="flex items-center justify-between">
               <p className="text-muted-foreground text-sm">

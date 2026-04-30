@@ -117,6 +117,7 @@ export type Database = {
         Row: {
           account_id: string
           amount: number
+          clears_at: string | null
           created_at: string
           description: string
           id: string
@@ -128,6 +129,7 @@ export type Database = {
         Insert: {
           account_id: string
           amount: number
+          clears_at?: string | null
           created_at?: string
           description: string
           id?: string
@@ -139,6 +141,7 @@ export type Database = {
         Update: {
           account_id?: string
           amount?: number
+          clears_at?: string | null
           created_at?: string
           description?: string
           id?: string
@@ -254,9 +257,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_adjust_balance: {
-        Args: { _account_id: string; _amount: number; _op: string }
-        Returns: number
+      admin_adjust_balance:
+        | {
+            Args: { _account_id: string; _amount: number; _op: string }
+            Returns: number
+          }
+        | {
+            Args: {
+              _account_id: string
+              _amount: number
+              _clears_at?: string
+              _op: string
+            }
+            Returns: number
+          }
+      admin_cancel_pending_transaction: {
+        Args: { _transaction_id: string }
+        Returns: undefined
+      }
+      admin_clear_pending_transaction: {
+        Args: { _transaction_id: string }
+        Returns: undefined
+      }
+      admin_edit_pending_transaction: {
+        Args: {
+          _new_amount: number
+          _new_clears_at: string
+          _transaction_id: string
+        }
+        Returns: undefined
       }
       has_role: {
         Args: {
